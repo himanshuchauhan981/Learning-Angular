@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
-// import 'rxjs/add/operator/catch'
 import { catchError, retry } from 'rxjs/operators'
 import { throwError, Observable } from 'rxjs';
 import { AppError } from '../app-erros';
@@ -18,7 +17,14 @@ export class PostService {
 	}
 
 	createPost(post){
-		return this.http.post(this.url,JSON.stringify(post))
+		return this.http.post(this.url,JSON.stringify(post)).pipe(
+			retry(1),catchError((error:Response) =>{
+				if(error.status === 404){
+					return Observable.throw(new NotFoundError());
+				}
+				return Observable.throw( new AppError(error))
+			})
+		)
 	}
 
 	updatePost(post){
@@ -26,7 +32,7 @@ export class PostService {
 	}
 
 	deletePost(id){
-		return this.http.delete(this.url+'/'+id).pipe(
+		return this.http.delete(this.url+'/post/'+id).pipe(
 			retry(1),catchError((error:Response) =>{
 				if(error.status === 404){
 					return Observable.throw(new NotFoundError());
